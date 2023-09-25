@@ -1,0 +1,3 @@
+﻿  09.cpp
+C:\Users\wsyconan\source\repos\04_Parallel_Computing\04_Parallel_Computing\09.cpp(81,40): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+  04_Parallel_Computing.vcxproj -> C:\Users\wsyconan\source\repos\04_Parallel_Computing\04_Parallel_Computing\x64\Debug\04_Parallel_Computing.exe

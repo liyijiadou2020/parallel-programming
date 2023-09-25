@@ -1,2 +1,0 @@
-# parallel-programming
-OpenMP，MPI

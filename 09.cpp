@@ -55,7 +55,7 @@ void print_chars(const char* massage, int size) {
 
 vector<int>generate_random_key(int size) {
   vector<int> key;
-  for (int i = 0; i < size; ++i) {
+  for (int i = 1; i < size; ++i) {
     key.push_back(i);
   }
   // +++++++ random  +++++++  
@@ -72,6 +72,7 @@ vector<int>generate_random_key(int size) {
 int main(int argc, char** argv) {
   int rank, size;
   MPI_Status status;  
+  // 使用规约 MPI_Reduce
   
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -94,73 +95,51 @@ int main(int argc, char** argv) {
     cin.getline(message, MAX_MESSAGE_LENGTH); // #TODO
     
     int total_text_length = strlen(message);
-    int chunk_size = total_text_length / MODULE_COUNT; // 段落长度
+    int chunk_size = total_text_length / (MODULE_COUNT - 1); // 段落长度
+    cout << "total_text_length " << total_text_length << "\n";
 
-    for (int i = 1; i < MODULE_COUNT; i++) {
-      if (key[i] == MODULE_COUNT - 1) {
-        int lastpart_size = total_text_length - (MODULE_COUNT - 1) * chunk_size;
-        MPI_Send(&lastpart_size, 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 字符数量
-        MPI_Send(&key[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 偏移量
-        MPI_Send(&total_text_length, 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 消息总长度
-        MPI_Send(&message[key[i] * chunk_size], lastpart_size, MPI_CHAR, i, 0, MPI_COMM_WORLD);  // 起始地址
-      }
-      else {
-        MPI_Send(&chunk_size, 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 字符数量
-        MPI_Send(&key[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 偏移量
-        MPI_Send(&total_text_length, 1, MPI_INT, i, 0, MPI_COMM_WORLD);  // 消息总长度
-        MPI_Send(&message[key[i] * chunk_size], chunk_size, MPI_CHAR, i, 0, MPI_COMM_WORLD);  // 起始地址
-      }      
-      //MPI_Send(&message[(i - 1) * chunk_size], chunk_size, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+    for (int i = 0; i < MODULE_COUNT - 2; i++) {
+      cout << "0 -----> " << key[i] << " ";      
+      cout << "chunk_size " << chunk_size << "\n";
+      MPI_Send(&chunk_size, 1, MPI_INT, key[i], 0, MPI_COMM_WORLD);  // 字符数量      
+      MPI_Send(&message[  i * chunk_size  ], chunk_size, MPI_CHAR, key[i], 0, MPI_COMM_WORLD);  // 起始地址                 
     }    
-    
-    int local_key = key[0];
-    cout << "process " << rank << " key = " << local_key << "\n";        
-    // 自己的偏移量是key[0]
-    if (local_key == MODULE_COUNT - 1) {
-      // 包括最后的所有
-      encry(&message[(MODULE_COUNT - 1) * chunk_size], total_text_length - (MODULE_COUNT - 1) * chunk_size, rank);
-      print_chars(&message[(MODULE_COUNT - 1) * chunk_size], total_text_length - (MODULE_COUNT - 1) * chunk_size);
-    }
-    else {
-      // 常规长度
-      encry(&message[local_key * chunk_size], chunk_size, rank);
-      print_chars(&message[local_key * chunk_size], chunk_size);
-    }
-    //encry(&message[(MODULE_COUNT - 1) * chunk_size], total_text_length - (MODULE_COUNT - 1) * chunk_size, rank);
+    cout << "0 -----> " << (MODULE_COUNT - 2) << " ";
+    int lastpart_size = total_text_length - (MODULE_COUNT - 2) * chunk_size;
+    cout << "lastpart_size " << lastpart_size << "\n";
+    MPI_Send(&lastpart_size, 1, MPI_INT, key[MODULE_COUNT - 2], 0, MPI_COMM_WORLD);  // 字符数量
+    MPI_Send(&message[  (MODULE_COUNT - 2) * chunk_size ], lastpart_size, MPI_CHAR, key[MODULE_COUNT - 2], 0, MPI_COMM_WORLD);  // 起始地址
+
   } 
   else // ****************** 其他线程 ********************
   {    
     int chunk_size = 0;
-    int local_key = 0;
-    int total_text_length = 0;
-    char* chunk = (char*)malloc(chunk_size * sizeof(char));
-
+    int total_text_length = 0;    
     MPI_Recv(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);    // 字符数量
-    MPI_Recv(&local_key, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);    // 偏移量
-    MPI_Recv(&total_text_length, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);    // 消息总长度
+    char* chunk = (char*)malloc(chunk_size * sizeof(char));
     MPI_Recv(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status); // 起始地址
     
-    cout << "process " << rank << " key = " << local_key << "\n";
-    cout << "before: \n";
+    //cout << "process " << rank << " key = " << local_key << "\n";
+    cout << "process " << rank << " : ";
+    cout << "before: ";
     print_chars(chunk, chunk_size);
-    encry(chunk, chunk_size, rank);
-    cout << "after: \n";
+    encry(chunk, chunk_size, 0);
+    cout << "after: ";
     print_chars(chunk, chunk_size);
+    cout << "\n";
     
     MPI_Send(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // 字符数量
-    MPI_Send(&total_text_length, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // 消息总长度
     MPI_Send(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD); // 起始地址
-    
   }
 
   if (rank == 0) {
     int total_text_length = 0;
     for (int i = 1; i < MODULE_COUNT; i++) {
       int chunk_size = 0;      
-      char* chunk = (char*)malloc(chunk_size * sizeof(char));
-      MPI_Recv(&chunk_size, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);     
-      MPI_Recv(&total_text_length, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status);      
-      MPI_Recv(chunk, chunk_size, MPI_CHAR, i, 0, MPI_COMM_WORLD, &status);      
+      MPI_Recv(&chunk_size, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &status); // #todo: key怎么传递过来？
+      char* chunk = (char*)malloc(chunk_size * sizeof(char));      
+      MPI_Recv(chunk, chunk_size, MPI_CHAR, i, 0, MPI_COMM_WORLD, &status);
+      total_text_length += chunk_size;
 
       for (int j = 0; j < chunk_size; j++) {
         message[(i - 1) * chunk_size + j] = chunk[j];
@@ -168,8 +147,9 @@ int main(int argc, char** argv) {
     }
     cout << "ENCRPT FINISHED : " << endl;
     print_chars(message, total_text_length);
+    fflush(stdout);
   }
-
+  
   MPI_Finalize();
   return 0;
 }

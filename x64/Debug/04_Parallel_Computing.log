@@ -1,3 +1,3 @@
 ﻿  09.cpp
-C:\source\Parallel_Programming\parallel-programming\09.cpp(97,44): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+C:\source\Parallel_Programming\parallel-programming\09.cpp(98,40): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
   04_Parallel_Computing.vcxproj -> C:\source\Parallel_Programming\parallel-programming\x64\Debug\04_Parallel_Computing.exe

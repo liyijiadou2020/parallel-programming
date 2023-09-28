@@ -87,15 +87,33 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return 0;
   }
-
-  //char message[MAX_MESSAGE_LENGTH];
+  
   char* message = (char*)malloc(MAX_MESSAGE_LENGTH * sizeof(char));
   
   if (rank == 0) {            
-    key = generate_random_key(MODULE_COUNT);
-    cout << "\nEnter message to encryptpt: ";
-    cin.getline(message, MAX_MESSAGE_LENGTH);
+    string mood;
+    cout << "Choose method given message. Enter [0]: default text (text from <Little Prince>) [1]: give text through shell. others: exit programm.\n";
+    cin >> mood;
+
+    if (mood == "1") {
+      cin.clear();
+      cin.ignore();
+      cout << "\nEnter message to encrypt: \n";            
+      cin.getline(message, MAX_MESSAGE_LENGTH);
+    }
+    else if (mood == "0") {      
+      cout << "[Choose default text] \n";
+      const char* text = "The narrator introduces himself as a man who learned when he was a child that adults lack imagination and understanding. He is now a pilot who has crash-landed in a desert. He encounters a small boy who asks him for a drawing of a sheep, and the narrator obliges. The narrator, who calls the child the little prince, learns that the boy comes from a very small planet, which the narrator believes to be asteroid B-612. Over the course of the next few days, the little prince tells the narrator about his life. On his asteroid-planet, which is no bigger than a house, the prince spends his time pulling up baobab seedlings, lest they grow big enough to engulf the tiny planet. One day an anthropomorphic rose grows on the planet, and the prince loves her with all his heart. However, her vanity and demands become too much for the prince, and he leaves.";
+      strcpy_s(message, strlen(text) + 1, text);     
+      cout << ">>>>>>>> ORIGINAL TEXT: <<<<<<<<<<<\n";
+      print_chars(text, strlen(text));
+    }
+    else {
+      cout << "Exiting program...\n";
+      return 0;
+    }
     
+    key = generate_random_key(MODULE_COUNT);
     total_text_length = strlen(message);
     // text is devided into(MODULE_COUNT - 1) paragraphs
     int chunk_size = total_text_length / (MODULE_COUNT - 1); // length of paragraph 
@@ -151,7 +169,7 @@ int main(int argc, char** argv) {
     }
 
     cout << "\n >>>>>>>>> [SUCCEED!] ENCRYPT FINISHED : <<<<<<<<<< \n";
-    cout << received_str;
+    cout << received_str << endl;
   }
   
   MPI_Finalize();

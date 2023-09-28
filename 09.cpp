@@ -24,7 +24,7 @@ using namespace std;
 * length - длиндельность
 * numB - отклонение подстановки
 */
-void encry(char* strI, int length, int numB)
+void encrypt(char* strI, int length, int numB)
 {    
   for (int i = 0; i < length; i++)
   {
@@ -88,27 +88,28 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  char message[MAX_MESSAGE_LENGTH];
+  //char message[MAX_MESSAGE_LENGTH];
+  char* message = (char*)malloc(MAX_MESSAGE_LENGTH * sizeof(char));
   
   if (rank == 0) {            
     key = generate_random_key(MODULE_COUNT);
-    cout << "\nEnter message to encrypt: ";
+    cout << "\nEnter message to encryptpt: ";
     cin.getline(message, MAX_MESSAGE_LENGTH);
     
     total_text_length = strlen(message);
     // text is devided into(MODULE_COUNT - 1) paragraphs
     int chunk_size = total_text_length / (MODULE_COUNT - 1); // length of paragraph 
-    cout << "\n\n >> total_text_length " << total_text_length << "\n";
+    cout << "\n\n >> total_text_length : " << total_text_length << "\n";
 
     for (int i = 0; i < MODULE_COUNT - 2; i++) {
-      cout << "0 -----> " << key[i] << "size : " << chunk_size << " sent paragraph : ";
-      print_chars(&message[i * chunk_size], chunk_size);
+      //cout << "0 -----> " << key[i] << " size : " << chunk_size << " sent paragraph : ";
+      //print_chars(&message[i * chunk_size], chunk_size);
       MPI_Send(&chunk_size, 1, MPI_INT, key[i], 0, MPI_COMM_WORLD);  // length of paragraph     
       MPI_Send(&message[  i * chunk_size  ], chunk_size, MPI_CHAR, key[i], 0, MPI_COMM_WORLD);  // start address of paragraph
     }    
     int lastpart_size = total_text_length - (MODULE_COUNT - 2) * chunk_size;
-    cout << "0 -----> " << (MODULE_COUNT - 2) << "size : " << lastpart_size << " sent paragraph : ";
-    print_chars(&message[(MODULE_COUNT - 2) * chunk_size], lastpart_size);
+    //cout << "0 -----> " << key[MODULE_COUNT - 2] << " size : " << lastpart_size << " sent paragraph : ";
+    //print_chars(&message[(MODULE_COUNT - 2) * chunk_size], lastpart_size);
     MPI_Send(&lastpart_size, 1, MPI_INT, key[MODULE_COUNT - 2], 0, MPI_COMM_WORLD);  // length of paragraph  
     MPI_Send(&message[  (MODULE_COUNT - 2) * chunk_size ], lastpart_size, MPI_CHAR, key[MODULE_COUNT - 2], 0, MPI_COMM_WORLD); // start address of paragraph
 
@@ -117,45 +118,40 @@ int main(int argc, char** argv) {
   {    
     int chunk_size = 0;
     int total_text_length = 0;    
-    MPI_Recv(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);    // 字符数量
+    MPI_Recv(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     char* chunk = (char*)malloc(chunk_size * sizeof(char));
-    MPI_Recv(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status); // 起始地址
+    MPI_Recv(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
     
-    cout << "-------------------\nprocess " << rank << " : ";
-    cout << "before: ";
-    print_chars(chunk, chunk_size);
+    //cout << "-------------------\nprocess " << rank << " : ";
+    //cout << "before: ";
+    //print_chars(chunk, chunk_size);
     
-    encry(chunk, chunk_size, rank); // 这里可以替换成自己的加密方式，我使用了凯撒密码
+    encrypt(chunk, chunk_size, rank);
     
-    cout << "\n >after: ";
-    print_chars(chunk, chunk_size);
-    cout << "\n";
+    //cout << "\n >after: ";
+    //print_chars(chunk, chunk_size);
+    //cout << "\n";
     
     MPI_Send(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // 字符数量
     MPI_Send(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD); // 起始地址
   }
 
   if (rank == 0) {
-    int local_length = 0;
+    string received_str = "";
+
     for (int i = 0; i < MODULE_COUNT - 1; i++) {
       int chunk_size = 0;
       MPI_Recv(&chunk_size, 1, MPI_INT, key[i], 0, MPI_COMM_WORLD, &status);
-      local_length += chunk_size;
       char* chunk = (char*)malloc(chunk_size * sizeof(char));
-      MPI_Recv(chunk, chunk_size, MPI_CHAR, key[i], 0, MPI_COMM_WORLD, &status);
-      cout << " [RECEIVE] 0 -----> " << key[i] << "size : " << chunk_size << " received paragraph : ";
-      print_chars(chunk, chunk_size);
-      for (int j = 0; j < chunk_size; j++) {
-        message[i * chunk_size + j] = chunk[j];
+      MPI_Recv(chunk, chunk_size, MPI_CHAR, key[i], 0, MPI_COMM_WORLD, &status);            
+      
+      for (int j = 0; j < chunk_size; j++) {        
+        received_str += chunk[j];
       }
     }
 
-    cout << "\n >>>>>>>>> ENCRYPT FINISHED : <<<<<<<<<< " << "\n";
-    cout << "local_length : " << local_length << "total_text_length : " << total_text_length;
-    print_chars(message, total_text_length);
-    cout << "^^^^^^^^^";
-    print_chars(message, local_length);
-    fflush(stdout);
+    cout << "\n >>>>>>>>> [SUCCEED!] ENCRYPT FINISHED : <<<<<<<<<< \n";
+    cout << received_str;
   }
   
   MPI_Finalize();

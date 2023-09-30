@@ -17,12 +17,12 @@ using namespace std;
 
 
 /**
-* ß·ß‚ß⁄ßﬁßÌß÷ ß·ß‡ß’ß„ß‰ß—ßﬂß‡ß”ß‹ß⁄
+* –ø—Ä–∏–º—ã–µ –ø–æ–¥—Å—Ç–∞–Ω–æ–≤–∫–∏
 * 
 * @param
-* strI - ßØß—ßÈß—ß›ßÓßﬂßÌß€ ß—ß’ß‚ß÷ß„ ß„ß‰ß‚ß‡ß‹ß⁄
-* length - ß’ß›ß⁄ßﬂß’ß÷ß›ßÓßﬂß‡ß„ß‰ßÓ
-* numB - ß‡ß‰ß‹ß›ß‡ßﬂß÷ßﬂß⁄ß÷ ß·ß‡ß’ß„ß‰ß—ßﬂß‡ß”ß‹ß⁄
+* strI - –ù–∞—á–∞–ª—å–Ω—ã–π –∞–¥—Ä–µ—Å —Å—Ç—Ä–æ–∫–∏
+* length - –¥–ª–∏–Ω–¥–µ–ª—å–Ω–æ—Å—Ç—å
+* numB - –æ—Ç–∫–ª–æ–Ω–µ–Ω–∏–µ –ø–æ–¥—Å—Ç–∞–Ω–æ–≤–∫–∏
 */
 void encrypt(char* strI, int length, int numB)
 {    
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   
   if (rank == 0) {            
     string mood;
-    cout << "Choose method given message. Enter [0]: default text (text from <Little Prince>) [1]: give text through shell. others: exit programm.\n";
+    cout << "Choose method given message. Enter [0]: default text (text from <Little Prince>) [1]: give text through shell. [others]: exit programm.\n";
     cin >> mood;
 
     if (mood == "1") {
@@ -150,8 +150,8 @@ int main(int argc, char** argv) {
     //print_chars(chunk, chunk_size);
     //cout << "\n";
     
-    MPI_Send(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD); // ◊÷∑˚ ˝¡ø
-    MPI_Send(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD); // ∆ ºµÿ÷∑
+    MPI_Send(&chunk_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    MPI_Send(chunk, chunk_size, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
   }
 
   if (rank == 0) {
